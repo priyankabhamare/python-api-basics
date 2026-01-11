@@ -7,16 +7,21 @@ Learn:
 - Using input() to make dynamic API requests
 - Building URLs with f-strings
 - Query parameters in URLs
+- Input validation
 """
 
 import requests
 
+# --- Helper Functions ---
 
 def get_user_info():
     """Fetch user info based on user input."""
     print("=== User Information Lookup ===\n")
 
-    user_id = input("Enter user ID (1-10): ")
+    user_id = input("Enter user ID (1-10): ").strip()
+    if not user_id.isdigit() or not (1 <= int(user_id) <= 10):
+        print("Invalid input! User ID must be a number between 1 and 10.")
+        return
 
     url = f"https://jsonplaceholder.typicode.com/users/{user_id}"
     response = requests.get(url)
@@ -36,9 +41,11 @@ def search_posts():
     """Search posts by user ID."""
     print("\n=== Post Search ===\n")
 
-    user_id = input("Enter user ID to see their posts (1-10): ")
+    user_id = input("Enter user ID to see their posts (1-10): ").strip()
+    if not user_id.isdigit() or not (1 <= int(user_id) <= 10):
+        print("Invalid input! User ID must be a number between 1 and 10.")
+        return
 
-    # Using query parameters
     url = "https://jsonplaceholder.typicode.com/posts"
     params = {"userId": user_id}
 
@@ -76,6 +83,60 @@ def get_crypto_price():
         print("Try: btc-bitcoin, eth-ethereum, doge-dogecoin")
 
 
+def get_weather():
+    """Fetch current weather for a city."""
+    print("\n=== Weather Checker ===\n")
+    # Static city to lat/long mapping for simplicity
+    cities = {
+        "delhi": (28.61, 77.23),
+        "mumbai": (19.07, 72.87),
+        "bangalore": (12.97, 77.59),
+        "chennai": (13.08, 80.27),
+        "kolkata": (22.57, 88.36)
+    }
+
+    city_name = input("Enter city name (e.g., delhi, mumbai): ").lower().strip()
+    if city_name not in cities:
+        print("City not found in database!")
+        print(f"Available cities: {', '.join(cities.keys())}")
+        return
+
+    lat, lon = cities[city_name]
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        temp = data['current_weather']['temperature']
+        wind = data['current_weather']['windspeed']
+        print(f"\nCurrent weather in {city_name.title()}:")
+        print(f"Temperature: {temp}°C")
+        print(f"Wind Speed: {wind} km/h")
+    else:
+        print("Failed to fetch weather data.")
+
+
+def search_todos():
+    """Search todos by completion status."""
+    print("\n=== Todos Filter ===\n")
+    status = input("Show completed todos? (yes/no): ").lower().strip()
+    if status not in ["yes", "no"]:
+        print("Invalid input! Enter 'yes' or 'no'.")
+        return
+
+    completed = "true" if status == "yes" else "false"
+    url = "https://jsonplaceholder.typicode.com/todos"
+    params = {"completed": completed}
+
+    response = requests.get(url, params=params)
+    todos = response.json()
+
+    print(f"\nTodos with completed={completed}: {len(todos)} found")
+    for i, todo in enumerate(todos[:5], 1):  # show first 5
+        print(f"{i}. {todo['title']}")
+
+
+# --- Main Menu ---
 def main():
     """Main menu for the program."""
     print("=" * 40)
@@ -87,9 +148,11 @@ def main():
         print("1. Look up user info")
         print("2. Search posts by user")
         print("3. Check crypto price")
-        print("4. Exit")
+        print("4. Check weather")
+        print("5. Search todos by completion")
+        print("6. Exit")
 
-        choice = input("\nEnter choice (1-4): ")
+        choice = input("\nEnter choice (1-6): ").strip()
 
         if choice == "1":
             get_user_info()
@@ -98,6 +161,10 @@ def main():
         elif choice == "3":
             get_crypto_price()
         elif choice == "4":
+            get_weather()
+        elif choice == "5":
+            search_todos()
+        elif choice == "6":
             print("\nGoodbye!")
             break
         else:
@@ -106,17 +173,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# --- EXERCISES ---
-#
-# Exercise 1: Add a function to fetch weather for a city
-#             Use Open-Meteo API (no key required):
-#             https://api.open-meteo.com/v1/forecast?latitude=28.61&longitude=77.23&current_weather=true
-#             Challenge: Let user input city name (you'll need to find lat/long)
-#
-# Exercise 2: Add a function to search todos by completion status
-#             URL: https://jsonplaceholder.typicode.com/todos
-#             Params: completed=true or completed=false
-#
-# Exercise 3: Add input validation (check if user_id is a number)
